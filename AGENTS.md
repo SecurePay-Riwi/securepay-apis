@@ -64,3 +64,16 @@ stop and ask instead of working around it.
 - The list file is produced by securepay-seed; this repo only reads it.
 - uvicorn is the server that runs the FastAPI app; FastAPI alone does not
   listen on a port.
+
+## Where to read more
+
+Read these before changing the design, not to work on the code:
+
+- Architecture overview: https://securepay-riwi.github.io/SecurePay/docs/architecture/overview
+- Decisions (ADRs): https://securepay-riwi.github.io/SecurePay/docs/architecture/decisions
+- Team decisions: https://securepay-riwi.github.io/SecurePay/docs/architecture/team-decisions
+- Open questions: https://securepay-riwi.github.io/SecurePay/docs/architecture/open-questions
+- Data flow: https://securepay-riwi.github.io/SecurePay/docs/architecture/data-flow
+- Logbook: https://securepay-riwi.github.io/SecurePay/docs/logbook
+- Restricted list service: https://securepay-riwi.github.io/SecurePay/docs/components/restricted-list
+- Exchange rates: https://securepay-riwi.github.io/SecurePay/docs/components/exchange_rates
