@@ -1,0 +1,18 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "securepay-apis"
+version = "0.1.0"
+description = "API data sources for SecurePay: exchange rates (Frankfurter) and restricted list"
+requires-python = ">=3.12"
+dependencies = [
+    "securepay-shared>=0.1.0",
+    "httpx>=0.28.1",
+    "python-dotenv>=1.2.4",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["exchange_rates", "restricted_list"]
