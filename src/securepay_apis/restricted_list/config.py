@@ -41,11 +41,27 @@ class Config:
             raise ValueError("LISTA_FALLA_PCT debe estar entre 0 y 100")
 
 
+# Sin SEED_LIST_FILE, el archivo se busca aquí y después en el clon vecino
+# ../securepay-seed, que es quien lo exporta.
+ARCHIVOS_CANDIDATOS = (
+    Path("generated/listas/lista_restrictiva.jsonl"),
+    Path("../securepay-seed/generated/listas/lista_restrictiva.jsonl"),
+)
+
+
+def archivo_lista(candidatos=ARCHIVOS_CANDIDATOS) -> Path:
+    """SEED_LIST_FILE si está; si no, el primer candidato que exista; si no
+    existe ninguno, el primero, para que el error lo nombre."""
+    if os.getenv("SEED_LIST_FILE"):
+        return Path(os.environ["SEED_LIST_FILE"])
+    return next((p for p in candidatos if p.is_file()), candidatos[0])
+
+
 def leer_config() -> Config:
     semilla = os.getenv("LISTA_SEMILLA")
     config = Config(
         fuente=os.getenv("LISTA_SOURCE", "file"),
-        archivo=Path(os.getenv("SEED_LIST_FILE", "generated/listas/lista_restrictiva.jsonl")),
+        archivo=archivo_lista(),
         bucket=os.getenv("PROVEEDOR_LISTAS_BUCKET", "pagoseguro-proveedor-listas"),
         clave_s3=os.getenv("PROVEEDOR_LISTAS_KEY", "lista_restrictiva.jsonl"),
         latencia_min_ms=int(os.getenv("LISTA_LATENCIA_MIN_MS", 50)),

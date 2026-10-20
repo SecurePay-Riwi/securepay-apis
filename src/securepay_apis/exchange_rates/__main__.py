@@ -1,6 +1,6 @@
 """Local entry point: fetch rates and save a JSON as evidence.
 
-    uv run python -m sources.apis.exchange_rates
+    uv run python -m securepay_apis.exchange_rates
 
 Serves two purposes:
 1. Prove the API consumption works (evidence for the TL demo).
@@ -14,7 +14,7 @@ import json
 import logging
 from pathlib import Path
 
-from sources.apis.exchange_rates import frankfurter
+from securepay_apis.exchange_rates import frankfurter
 
 logger = logging.getLogger(__name__)
 
