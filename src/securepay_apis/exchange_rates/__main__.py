@@ -1,43 +1,62 @@
-"""Local entry point: fetch rates and save a JSON as evidence.
+"""Local entry point: fetch the rates and store them.
 
     uv run python -m securepay_apis.exchange_rates
 
-Serves two purposes:
-1. Prove the API consumption works (evidence for the TL demo).
-2. Leave a local file with the day's rates for development.
+Where they go depends on RATES_OUTPUT:
 
-In AWS, this task runs as a Lambda and writes to DynamoDB. Locally, it
-writes to a JSON file that is not tracked by git.
+- file (default): a JSON per day in exchange_rates/data/, ignored by Git.
+  Needs only internet, no LocalStack.
+- dynamodb: the pagoseguro-exchange-rates table (LocalStack locally, via
+  AWS_ENDPOINT_URL).
+
+Without RATES_FROM it stores today's rates, like the daily Lambda
+(handler.py). With RATES_FROM=2026-10-01 it stores every published day
+from that date up to today, so the engine can convert the simulated
+transactions of those days with their own rate.
 """
 
 import json
 import logging
+import os
 from pathlib import Path
 
-from securepay_apis.exchange_rates import frankfurter
+# store loads .env on import, before RATES_OUTPUT and RATES_FROM are read.
+from securepay_apis.exchange_rates import frankfurter, store
 
 logger = logging.getLogger(__name__)
 
-# Local folder for the evidence JSON. Ignored by .gitignore.
+# Local folder for the JSON files. Ignored by .gitignore.
 _DATA_DIR = Path(__file__).parent / "data"
+
+_OUTPUTS = ("file", "dynamodb")
 
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 
+    output = os.getenv("RATES_OUTPUT", "file")
+    if output not in _OUTPUTS:
+        raise ValueError(f"RATES_OUTPUT must be one of {_OUTPUTS}, not {output!r}")
+    start = os.getenv("RATES_FROM")
+
     print("Fetching rates from Frankfurter...")
-    result = frankfurter.fetch()
+    results = frankfurter.fetch_range(start) if start else [frankfurter.fetch()]
 
-    print(f"Rates date: {result['date']}")
-    for currency, rate in result["rates"].items():
-        print(f"  1 USD = {rate} {currency}")
+    for result in results:
+        rates = ", ".join(f"{rate} {currency}" for currency, rate in result["rates"].items())
+        print(f"  {result['date']}: 1 USD = {rates}")
 
-    path = _save_json(result)
-    print(f"\nRates saved to: {path}")
+    if output == "dynamodb":
+        count = store.save(results)
+        print(f"\n{count} day(s) saved to DynamoDB table {store.table_name()}")
+    else:
+        for result in results:
+            path = _save_json(result)
+        print(f"\n{len(results)} day(s) saved to {path.parent}")
 
 
 def _save_json(result: dict) -> Path:
-    """Write the rates to a JSON file.
+    """Write the rates of one day to a JSON file.
 
     Decimal values are serialized as strings. JSON has no native Decimal
     type, and storing them as floats would lose precision.

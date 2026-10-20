@@ -98,3 +98,44 @@ def test_503_is_retried_and_then_fails():
          patch("time.sleep"):
         with pytest.raises(RuntimeError, match="did not respond"):
             frankfurter.fetch()
+
+# --- Date range --------------------------------------------------------------
+
+def _day(date, cop=3317.65, eur=0.88286, jpy=157.78):
+    return [
+        {"date": date, "base": "USD", "quote": "COP", "rate": cop},
+        {"date": date, "base": "USD", "quote": "EUR", "rate": eur},
+        {"date": date, "base": "USD", "quote": "JPY", "rate": jpy},
+    ]
+
+
+def test_range_returns_one_result_per_day_oldest_first():
+    rows = _day("2026-10-02", cop=3320) + _day("2026-10-01", cop=3310)
+
+    with patch("httpx.get", return_value=_response(rows)) as get:
+        days = frankfurter.fetch_range("2026-10-01", "2026-10-02")
+
+    assert [d["date"] for d in days] == ["2026-10-01", "2026-10-02"]
+    assert days[0]["rates"]["COP"] == Decimal("3310")
+    assert days[0]["rates"]["USD"] == Decimal(1)
+    assert get.call_args.kwargs["params"]["from"] == "2026-10-01"
+    assert get.call_args.kwargs["params"]["to"] == "2026-10-02"
+
+
+def test_range_skips_a_day_with_a_missing_currency():
+    """COP and EUR come from different central banks with different holidays."""
+    no_cop = [r for r in _day("2026-10-12") if r["quote"] != "COP"]
+    rows = _day("2026-10-09") + no_cop
+
+    with patch("httpx.get", return_value=_response(rows)):
+        days = frankfurter.fetch_range("2026-10-09")
+
+    assert [d["date"] for d in days] == ["2026-10-09"]
+
+
+def test_range_with_an_invalid_rate_fails_entirely():
+    rows = _day("2026-10-01") + _day("2026-10-02", cop=0)
+
+    with patch("httpx.get", return_value=_response(rows)):
+        with pytest.raises(ValueError, match="Invalid rate"):
+            frankfurter.fetch_range("2026-10-01")

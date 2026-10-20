@@ -18,8 +18,10 @@ Run everything from the repository root.
 ```bash
 uv sync                 # install (Python 3.12, securepay-shared from PyPI)
 uv run pytest           # tests; they need no database, internet or LocalStack
+                        # (the LocalStack ones skip themselves when it is down)
 uv run uvicorn securepay_apis.restricted_list.main:app --port 8001
 uv run python -m securepay_apis.exchange_rates       # needs internet
+RATES_OUTPUT=dynamodb uv run python -m securepay_apis.exchange_rates  # also LocalStack
 ```
 
 ## Structure rules (mandatory)
@@ -62,6 +64,9 @@ stop and ask instead of working around it.
 - The restricted-list latency and 503 errors are intentional: they force the
   engine to use a cache and a circuit breaker. Do not "fix" them.
 - The list file is produced by securepay-seed; this repo only reads it.
+- The exchange-rates table is created by LocalStack's init scripts in the
+  SecurePay repository (Terraform in AWS); this repo only writes items.
+  Keep its keys (`base`, `rate_date`) in sync with that script.
 - uvicorn is the server that runs the FastAPI app; FastAPI alone does not
   listen on a port.
 
