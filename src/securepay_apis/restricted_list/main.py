@@ -15,9 +15,9 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request
 
-from sources.apis.restricted_list.config import Config, leer_config
-from sources.apis.restricted_list.lista import cargar, normalizar
-from sources.apis.restricted_list.proveedor import ProveedorSimulado
+from securepay_apis.restricted_list.config import Config, leer_config
+from securepay_apis.restricted_list.lista import cargar, normalizar
+from securepay_apis.restricted_list.proveedor import ProveedorSimulado
 
 
 def create_app(config: Config | None = None) -> FastAPI:

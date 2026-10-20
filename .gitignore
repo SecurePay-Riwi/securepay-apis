@@ -1,8 +1,16 @@
-.env
+# Python
 __pycache__/
-*.pyc
-*.pyo
+*.py[co]
 .venv/
 dist/
 *.egg-info/
 .pytest_cache/
+
+# Local settings
+.env
+.vscode/
+
+# Generated data: never committed (it lives in S3)
+generated/
+/data/
+/src/securepay_apis/exchange_rates/data/

@@ -27,7 +27,7 @@ def leer_texto(config) -> str:
     if not config.archivo.exists():
         raise FileNotFoundError(
             f"No existe {config.archivo}. Corre primero el seed "
-            "(uv run python -m db.seed.seed)."
+            "(uv run python -m securepay_seed.seed, en el repo securepay-seed)."
         )
     return config.archivo.read_text(encoding="utf-8")
 

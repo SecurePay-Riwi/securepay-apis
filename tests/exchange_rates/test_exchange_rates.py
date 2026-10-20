@@ -10,7 +10,7 @@ from unittest.mock import patch
 import httpx
 import pytest
 
-from sources.apis.exchange_rates import frankfurter
+from securepay_apis.exchange_rates import frankfurter
 
 
 # --- Fixed responses --------------------------------------------------------

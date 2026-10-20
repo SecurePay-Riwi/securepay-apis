@@ -1,18 +1,29 @@
+[project]
+name = "securepay-apis"
+version = "0.1.0"
+description = "Simulated external APIs for SecurePay: restricted list provider and exchange rates"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "boto3>=1.43.113",
+    "fastapi>=0.143.0",
+    "httpx>=0.28.1",
+    "python-dotenv>=1.2.4",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[project]
-name = "securepay-apis"
-version = "0.1.0"
-description = "API data sources for SecurePay: exchange rates (Frankfurter) and restricted list"
-requires-python = ">=3.12"
-dependencies = [
-    "securepay-shared>=0.1.0",
-    "httpx>=0.28.1",
-    "python-dotenv>=1.2.4",
-]
+[tool.hatch.build.targets.wheel]
+packages = ["src/securepay_apis"]
 
 [tool.pytest.ini_options]
-pythonpath = ["."]
-testpaths = ["exchange_rates", "restricted_list"]
+testpaths = ["tests"]
+addopts = ["--import-mode=importlib"]

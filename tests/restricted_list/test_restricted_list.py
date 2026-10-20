@@ -12,10 +12,10 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from sources.apis.restricted_list.config import Config
-from sources.apis.restricted_list.lista import normalizar, parsear
-from sources.apis.restricted_list.main import create_app
-from sources.apis.restricted_list.proveedor import ProveedorSimulado
+from securepay_apis.restricted_list.config import Config
+from securepay_apis.restricted_list.lista import normalizar, parsear
+from securepay_apis.restricted_list.main import create_app
+from securepay_apis.restricted_list.proveedor import ProveedorSimulado
 
 REGISTROS = [
     {"documento": "1000000016", "tipo": "sanciones", "fecha_inclusion": "2023-04-11"},
