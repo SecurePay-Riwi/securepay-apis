@@ -82,3 +82,10 @@ Read these before changing the design, not to work on the code:
 - Logbook: https://securepay-riwi.github.io/SecurePay/docs/logbook
 - Restricted list service: https://securepay-riwi.github.io/SecurePay/docs/components/restricted-list
 - Exchange rates: https://securepay-riwi.github.io/SecurePay/docs/components/exchange_rates
+
+
+## Docker image (MAG-31)
+
+- The root `Dockerfile` uses Python 3.12 and `uv`; keep `uv.lock` synchronized with project dependencies.
+- Never commit `.env`, credentials, or generated restricted-list files.
+- The full ecosystem is orchestrated from the `SecurePay` repository.
