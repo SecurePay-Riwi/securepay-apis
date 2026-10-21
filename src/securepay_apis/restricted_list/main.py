@@ -13,8 +13,9 @@ reinicia el servicio. En AWS es API Gateway + Lambda fuera de la VPC.
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Path, Request
 
+from securepay_apis.restricted_list import docs
 from securepay_apis.restricted_list.config import Config, leer_config
 from securepay_apis.restricted_list.lista import cargar, normalizar
 from securepay_apis.restricted_list.proveedor import ProveedorSimulado
@@ -31,20 +32,22 @@ def create_app(config: Config | None = None) -> FastAPI:
         print(f"Lista restrictiva cargada: {len(app.state.lista)} personas")
         yield
 
-    app = FastAPI(title="Proveedor de listas restrictivas (simulado)", lifespan=lifespan)
+    app = FastAPI(**docs.APP, lifespan=lifespan)
 
-    @app.get("/health")
+    @app.get("/health", **docs.HEALTH)
     def health(request: Request):
         return {"status": "ok", "total": len(request.app.state.lista)}
 
-    @app.get("/lista")
+    @app.get("/lista", **docs.FULL_LIST)
     async def lista_completa(request: Request):
         await request.app.state.proveedor.simular()
         registros = list(request.app.state.lista.values())
         return {"total": len(registros), "registros": registros}
 
-    @app.get("/lista/{documento}")
-    async def consultar(documento: str, request: Request):
+    @app.get("/lista/{documento}", **docs.CHECK_DOCUMENT)
+    async def consultar(
+        request: Request, documento: str = Path(**docs.DOCUMENT_PARAM)
+    ):
         await request.app.state.proveedor.simular()
         doc = normalizar(documento)
         if not doc:
@@ -56,6 +59,7 @@ def create_app(config: Config | None = None) -> FastAPI:
             return {"documento": doc, "listado": False}
         return {"listado": True, **registro}
 
+    docs.hide_validation_error(app)
     return app
 
 

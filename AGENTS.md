@@ -54,6 +54,10 @@ stop and ask instead of working around it.
 
 - Commit messages and pull requests in English, conventional commits
   (`feat:`, `fix:`, `refactor:`, `docs:`, `build:`, `chore:`).
+- Swagger docs (summaries, descriptions, examples of every response) live in
+  `restricted_list/docs.py`, not in the endpoints. When an endpoint or its
+  answers change, update `docs.py` and the Docusaurus restricted-list page
+  together.
 - Existing Spanish names and comments stay; translate them only when editing
   that code anyway. Database table and column names stay as they are.
 - Reproducibility: `SEED=42` and `FECHA_REFERENCIA=2026-10-01` (from
