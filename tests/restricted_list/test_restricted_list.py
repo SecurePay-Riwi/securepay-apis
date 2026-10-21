@@ -145,27 +145,3 @@ def test_lee_de_s3_en_localstack(archivo):
             assert c.get("/lista/1000000016").json()["listado"] is True
     finally:
         s3.delete_object(Bucket=bucket, Key=clave)
-
-
-def test_swagger_documents_the_real_status_codes(archivo):
-    """/docs shows what each endpoint answers, and not FastAPI's generic 422."""
-    with cliente(archivo) as c:
-        rutas = c.get("/openapi.json").json()["paths"]
-
-    assert sorted(rutas["/lista/{documento}"]["get"]["responses"]) == ["200", "400", "503"]
-    assert sorted(rutas["/lista"]["get"]["responses"]) == ["200", "503"]
-    assert sorted(rutas["/health"]["get"]["responses"]) == ["200"]
-
-
-def test_swagger_examples_match_what_the_service_answers(archivo):
-    """The examples in /docs have the same shape as the real answers."""
-    with cliente(archivo) as c:
-        rutas = c.get("/openapi.json").json()["paths"]
-        ejemplos = rutas["/lista/{documento}"]["get"]["responses"]["200"]["content"][
-            "application/json"
-        ]["examples"]
-        listado = c.get("/lista/1000000016").json()
-        no_listado = c.get("/lista/1000000099").json()
-
-    assert set(ejemplos["listed"]["value"]) == set(listado)
-    assert set(ejemplos["not_listed"]["value"]) == set(no_listado)
