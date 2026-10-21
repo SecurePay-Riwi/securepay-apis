@@ -114,3 +114,15 @@ SecurePay-Riwi/
 ```
 
 Environment variables still override every path (see `.env.example`).
+
+
+## Docker image (MAG-31)
+
+Build the Python 3.12/uv image from this repository root. It installs locked production dependencies and starts the restricted-list API on port 8001 by default.
+
+```bash
+docker build -t securepay-apis .
+docker run --rm --env-file .env -p 8001:8001 securepay-apis
+```
+
+For the full local ecosystem, use Docker Compose in the `SecurePay` repository; it configures the generated restricted-list file and LocalStack endpoint.
