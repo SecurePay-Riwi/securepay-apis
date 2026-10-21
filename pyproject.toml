@@ -27,3 +27,6 @@ packages = ["src/securepay_apis"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = ["--import-mode=importlib"]
+markers = [
+    "integracion: needs LocalStack running (skips itself when it is not)",
+]

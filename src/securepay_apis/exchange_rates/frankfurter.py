@@ -7,11 +7,14 @@ Called once a day. In AWS, from a Lambda triggered by EventBridge Scheduler.
 """
 
 import json
+import logging
 import time
 from decimal import Decimal
 from typing import Any
 
 import httpx
+
+logger = logging.getLogger(__name__)
 
 # Without a custom User-Agent, Frankfurter responds 403. The default
 # Python UA is blocked.
@@ -46,16 +49,61 @@ def fetch() -> dict[str, Any]:
     valid, or nothing is stored.
     """
     params = {"base": _BASE, "quotes": ",".join(_CURRENCIES)}
-    url = f"{_URL}?base={_BASE}&quotes={','.join(_CURRENCIES)}"
-    headers = {"User-Agent": _USER_AGENT}
+    records = _get(params)
+    return _validate(records, _url(params))
 
+
+def fetch_range(start: str, end: str | None = None) -> list[dict[str, Any]]:
+    """Rates for every published day between start and end (both included).
+
+    Used to load past days into the table, for example from the generator's
+    reference date (2026-10-01) up to today. Without end, Frankfurter goes
+    up to today. Frankfurter blends several providers, so it usually has a
+    row for every day, weekends included; a day without one is simply
+    missing, and readers use the last earlier day.
+
+    Returns one dictionary per day, shaped like fetch(), oldest first.
+    A day where a currency is missing is skipped and logged, because the
+    providers do not always publish on the same days (COP comes from
+    BANREP, EUR and JPY from the ECB). Any invalid rate fails the whole
+    call, as in fetch().
+    """
+    params = {"base": _BASE, "quotes": ",".join(_CURRENCIES), "from": start}
+    if end:
+        params["to"] = end
+    records = _get(params)
+    url = _url(params)
+
+    by_date: dict[str, list[dict]] = {}
+    for record in records:
+        by_date.setdefault(record["date"], []).append(record)
+
+    days = []
+    for date in sorted(by_date):
+        quotes = {r["quote"] for r in by_date[date]}
+        if quotes != set(_CURRENCIES):
+            logger.warning("Skipping %s: Frankfurter returned only %s", date, quotes)
+            continue
+        days.append(_validate(by_date[date], url))
+
+    if not days:
+        raise ValueError(f"Frankfurter returned no complete day from {start}")
+    return days
+
+
+def _get(params: dict) -> list[dict]:
+    """Make the request and parse the rows with Decimal rates."""
+    headers = {"User-Agent": _USER_AGENT}
     response = _request_with_retries(params, headers)
 
     # parse_float=Decimal: boto3 rejects floats when writing to DynamoDB.
     # Parsing at the source avoids converting later.
-    records = json.loads(response.text, parse_float=Decimal)
+    return json.loads(response.text, parse_float=Decimal)
 
-    return _validate(records, url)
+
+def _url(params: dict) -> str:
+    """The full URL, kept with the rates as evidence of where they came from."""
+    return f"{_URL}?{'&'.join(f'{k}={v}' for k, v in params.items())}"
 
 
 def _request_with_retries(params: dict, headers: dict) -> httpx.Response:
