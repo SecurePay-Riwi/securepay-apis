@@ -114,3 +114,17 @@ SecurePay-Riwi/
 ```
 
 Environment variables still override every path (see `.env.example`).
+
+
+## Docker
+
+Build the Python 3.12 image with uv from this repository root:
+
+```bash
+docker build -t securepay-apis .
+```
+
+The standalone container needs the seed list at
+`/app/generated/listas/lista_restrictiva.jsonl` (or a custom path in
+`SEED_LIST_FILE`). The full Compose stack mounts the shared seed volume and
+sets this variable. Health check: http://localhost:8001/health.

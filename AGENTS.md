@@ -82,3 +82,12 @@ Read these before changing the design, not to work on the code:
 - Logbook: https://securepay-riwi.github.io/SecurePay/docs/logbook
 - Restricted list service: https://securepay-riwi.github.io/SecurePay/docs/components/restricted-list
 - Exchange rates: https://securepay-riwi.github.io/SecurePay/docs/components/exchange_rates
+
+
+## Docker image
+
+- The root `Dockerfile` builds the restricted-list API with Python 3.12 and uv;
+  the default command runs Uvicorn on port 8001.
+- In Compose, mount the seed list read-only and set
+  `SEED_LIST_FILE=/app/generated/listas/lista_restrictiva.jsonl`.
+- Update README when entry points, runtime variables, or Docker behavior change.
