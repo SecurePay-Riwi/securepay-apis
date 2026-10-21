@@ -40,6 +40,8 @@ uv run pytest
 | `GET /lista/{documento}` | Single-document lookup, fallback when the cache is unavailable |
 | `GET /health` | Liveness check (no artificial latency) |
 
+Interactive docs with examples of every response (Swagger): http://localhost:8001/docs.
+
 The service adds random latency (50 to 3000 ms) and returns 503 on about 5 % of
 requests, so the engine has to use a cache and a circuit breaker. Both values
 are configurable in `.env`.
