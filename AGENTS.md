@@ -93,7 +93,15 @@ every repository in the SecurePay-Riwi organization.
 - **Before opening a PR:** `uv run ruff format .`, `uv run ruff check .` and
   `uv run pytest`. The CI (`.github/workflows/ci.yml`: jobs `lint`,
   `secret-scan`, `tests`) runs the same on every PR to `main` and must be
-  green to merge. It has no deploy: this repository only produces data.
+  green to merge.
+- **Deploy:** `.github/workflows/deploy.yml` runs on every merge to `main`:
+  it builds the image (`--provenance=false`), pushes it to ECR
+  `securepay-dev-apis` and updates the Lambda `securepay-dev-exchange-rates`
+  with the role `securepay-dev-deploy-apis` (repository variable
+  `AWS_DEPLOY_ROLE_ARN`). The Lambda, the role and the repository are
+  Terraform in SecurePay. The image keeps uvicorn as its default command;
+  Lambda overrides it with `python -m awslambdaric <handler>`, so keep
+  `awslambdaric` in the dependencies and the handler path stable.
 
 ## Known traps
 
