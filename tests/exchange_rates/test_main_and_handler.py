@@ -23,8 +23,10 @@ def test_file_is_the_default_output(monkeypatch, tmp_path):
     monkeypatch.delenv("RATES_FROM", raising=False)
     monkeypatch.setattr(cli, "_DATA_DIR", tmp_path)
 
-    with patch.object(cli.frankfurter, "fetch", return_value=_RESULT), \
-         patch.object(cli.store, "save") as save:
+    with (
+        patch.object(cli.frankfurter, "fetch", return_value=_RESULT),
+        patch.object(cli.store, "save") as save,
+    ):
         cli.main()
 
     assert (tmp_path / "rates_2026-10-02.json").exists()
@@ -36,8 +38,10 @@ def test_dynamodb_output_with_a_start_date_saves_the_whole_range(monkeypatch):
     monkeypatch.setenv("RATES_FROM", "2026-10-01")
     days = [_RESULT, {**_RESULT, "date": "2026-10-05"}]
 
-    with patch.object(cli.frankfurter, "fetch_range", return_value=days) as fetch_range, \
-         patch.object(cli.store, "save", return_value=2) as save:
+    with (
+        patch.object(cli.frankfurter, "fetch_range", return_value=days) as fetch_range,
+        patch.object(cli.store, "save", return_value=2) as save,
+    ):
         cli.main()
 
     fetch_range.assert_called_once_with("2026-10-01")
@@ -52,8 +56,10 @@ def test_unknown_output_fails(monkeypatch):
 
 
 def test_handler_saves_todays_rates():
-    with patch.object(handler.frankfurter, "fetch", return_value=_RESULT), \
-         patch.object(handler.store, "save") as save:
+    with (
+        patch.object(handler.frankfurter, "fetch", return_value=_RESULT),
+        patch.object(handler.store, "save") as save,
+    ):
         response = handler.handler({}, None)
 
     save.assert_called_once_with([_RESULT])
@@ -61,8 +67,10 @@ def test_handler_saves_todays_rates():
 
 
 def test_handler_writes_nothing_when_frankfurter_fails():
-    with patch.object(handler.frankfurter, "fetch", side_effect=RuntimeError("down")), \
-         patch.object(handler.store, "save") as save:
+    with (
+        patch.object(handler.frankfurter, "fetch", side_effect=RuntimeError("down")),
+        patch.object(handler.store, "save") as save,
+    ):
         with pytest.raises(RuntimeError):
             handler.handler({}, None)
 

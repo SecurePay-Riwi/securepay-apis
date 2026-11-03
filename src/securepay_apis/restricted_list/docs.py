@@ -21,7 +21,10 @@ APP = {
     "description": DESCRIPTION,
     "openapi_tags": [
         {"name": "Restricted list", "description": "Read the provider's list."},
-        {"name": "Health", "description": "Liveness check, with no latency and no failures."},
+        {
+            "name": "Health",
+            "description": "Liveness check, with no latency and no failures.",
+        },
     ],
 }
 
@@ -34,7 +37,11 @@ _PROVIDER_DOWN = {
     }
 }
 
-_LISTED = {"documento": "1000000016", "tipo": "sanciones", "fecha_inclusion": "2023-06-13"}
+_LISTED = {
+    "documento": "1000000016",
+    "tipo": "sanciones",
+    "fecha_inclusion": "2023-06-13",
+}
 
 HEALTH = {
     "summary": "Check that the service is up",
@@ -92,7 +99,9 @@ CHECK_DOCUMENT = {
         400: {
             "description": "The document has no digits.",
             "content": {
-                "application/json": {"example": {"detail": "El documento no tiene dígitos"}}
+                "application/json": {
+                    "example": {"detail": "El documento no tiene dígitos"}
+                }
             },
         },
         **_PROVIDER_DOWN,
@@ -114,7 +123,9 @@ def hide_validation_error(app) -> None:
         if app.openapi_schema is None:
             schema = build()
             schema["paths"]["/lista/{documento}"]["get"]["responses"].pop("422", None)
-            schema.get("components", {}).get("schemas", {}).pop("HTTPValidationError", None)
+            schema.get("components", {}).get("schemas", {}).pop(
+                "HTTPValidationError", None
+            )
             schema.get("components", {}).get("schemas", {}).pop("ValidationError", None)
             if not schema.get("components", {}).get("schemas"):
                 schema.pop("components", None)

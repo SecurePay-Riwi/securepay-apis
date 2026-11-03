@@ -1,0 +1,81 @@
+name: CI
+
+# Runs on every pull request to main: lint, a secret scan and the tests.
+# Same checks as SecurePay's ci.yml, without deploy: this repository only
+# produces data. Nothing here needs AWS, PostgreSQL or LocalStack (the tests
+# that need LocalStack skip themselves). The job names are the check names.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_VERSION: "0.11.32"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Ruff check
+        run: uv run --frozen ruff check --output-format=github .
+
+      - name: Ruff format
+        run: uv run --frozen ruff format --check .
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GITLEAKS_VERSION: "8.28.0"
+      GITLEAKS_SHA256: a65b5253807a68ac0cafa4414031fd740aeb55f54fb7e55f386acb52e6a840eb
+    steps:
+      # The whole history: a secret removed in a later commit is still in git.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # The gitleaks binary (MIT); gitleaks-action needs a paid license for
+      # organization repositories.
+      - name: Install gitleaks
+        run: |
+          curl -sSfL -o gitleaks.tar.gz \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  gitleaks.tar.gz" | sha256sum --check
+          tar -xzf gitleaks.tar.gz gitleaks
+          rm gitleaks.tar.gz
+
+      # Every commit reachable from the checked-out ref. Exit code 1 on any
+      # finding fails the build; a secret that was rotated goes to
+      # .gitleaksignore with its fingerprint.
+      - name: Scan the history for secrets
+        run: ./gitleaks git . --log-opts="HEAD" --redact --no-banner --verbose --exit-code 1
+
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Pytest
+        run: uv run --frozen pytest -ra

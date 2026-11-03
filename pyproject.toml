@@ -15,6 +15,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest>=9.1.1",
+    "ruff>=0.17.3",
 ]
 
 [build-system]
@@ -23,6 +24,21 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/securepay_apis"]
+
+[tool.ruff]
+# Linter and formatter, same rules as SecurePay. CI runs "ruff check ." and
+# "ruff format --check ."; "ruff check --fix ." and "ruff format ." fix most
+# of it locally.
+target-version = "py312"
+
+[tool.ruff.lint]
+# pycodestyle (E, W), real errors (F), import order (I), Python 3.12 syntax
+# (UP) and likely bugs (bugbear, B).
+select = ["E", "W", "F", "I", "UP", "B"]
+ignore = [
+    "E501",   # line length: left to the formatter
+    "UP042",  # StrEnum changes what str() of a member returns
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

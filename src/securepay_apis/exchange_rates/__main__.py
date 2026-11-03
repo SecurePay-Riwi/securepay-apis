@@ -43,7 +43,9 @@ def main() -> None:
     results = frankfurter.fetch_range(start) if start else [frankfurter.fetch()]
 
     for result in results:
-        rates = ", ".join(f"{rate} {currency}" for currency, rate in result["rates"].items())
+        rates = ", ".join(
+            f"{rate} {currency}" for currency, rate in result["rates"].items()
+        )
         print(f"  {result['date']}: 1 USD = {rates}")
 
     if output == "dynamodb":

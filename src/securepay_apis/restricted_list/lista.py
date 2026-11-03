@@ -42,7 +42,9 @@ def parsear(texto: str) -> dict[str, dict]:
             registro = json.loads(linea)
             documento = normalizar(registro["documento"])
         except (json.JSONDecodeError, KeyError, TypeError) as error:
-            raise ValueError(f"Línea {numero} del archivo de la lista inválida: {error}")
+            raise ValueError(
+                f"Línea {numero} del archivo de la lista inválida: {error}"
+            ) from error
         lista[documento] = {
             "documento": documento,
             "tipo": registro.get("tipo"),

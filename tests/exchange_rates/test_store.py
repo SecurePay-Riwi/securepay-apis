@@ -6,7 +6,7 @@ end talks to LocalStack and skips itself when LocalStack is not running.
 
 import os
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 
 import pytest
@@ -62,11 +62,11 @@ def test_rates_stay_decimal():
 
 def test_expiry_counts_from_the_load_not_from_the_rate_date():
     """A past day loaded today must live 30 days from today."""
-    now = datetime(2026, 10, 20, tzinfo=timezone.utc)
+    now = datetime(2026, 10, 20, tzinfo=UTC)
 
     item = store.to_item(_RESULT, now=now)
 
-    assert item["expires_at"] == int(datetime(2026, 11, 19, tzinfo=timezone.utc).timestamp())
+    assert item["expires_at"] == int(datetime(2026, 11, 19, tzinfo=UTC).timestamp())
 
 
 def test_save_writes_one_item_per_day():
@@ -86,6 +86,7 @@ def test_table_name_comes_from_the_environment(monkeypatch):
 
 
 # --- Against LocalStack -------------------------------------------------------
+
 
 def _localstack_table():
     """A throwaway table in LocalStack, or skip if LocalStack is not up."""

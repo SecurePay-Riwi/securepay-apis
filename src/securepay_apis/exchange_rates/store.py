@@ -19,7 +19,7 @@ Lambda's role. The code does not change.
 """
 
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from dotenv import load_dotenv
@@ -50,7 +50,7 @@ def to_item(result: dict[str, Any], now: datetime | None = None) -> dict[str, An
     The rates are already Decimal (frankfurter parses them that way), so
     boto3 accepts them as they are.
     """
-    now = now or datetime.now(timezone.utc)
+    now = now or datetime.now(UTC)
     expires = now + timedelta(days=RETENTION_DAYS)
     return {
         "base": BASE,
@@ -68,7 +68,7 @@ def save(results: list[dict[str, Any]], table=None) -> int:
     retried run (EventBridge retries a failed Lambda) does no harm.
     """
     table = table or _table()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     with table.batch_writer() as batch:
         for result in results:
             batch.put_item(Item=to_item(result, now))
@@ -88,4 +88,3 @@ def latest(table=None) -> dict[str, Any] | None:
     )
     items = response.get("Items", [])
     return items[0] if items else None
-

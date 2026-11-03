@@ -12,7 +12,6 @@ import pytest
 
 from securepay_apis.exchange_rates import frankfurter
 
-
 # --- Fixed responses --------------------------------------------------------
 
 _OK_RESPONSE = [
@@ -32,6 +31,7 @@ def _response(json_data, status=200):
 
 
 # --- Happy path -------------------------------------------------------------
+
 
 def test_correct_response_returns_all_four_currencies():
     with patch("httpx.get", return_value=_response(_OK_RESPONSE)):
@@ -53,6 +53,7 @@ def test_rates_are_decimal_not_float():
 
 
 # --- Error cases ------------------------------------------------------------
+
 
 def test_missing_currency_raises():
     incomplete = [r for r in _OK_RESPONSE if r["quote"] != "COP"]
@@ -94,12 +95,13 @@ def test_503_is_retried_and_then_fails():
     """
     response_503 = _response({}, status=503)
 
-    with patch("httpx.get", return_value=response_503), \
-         patch("time.sleep"):
+    with patch("httpx.get", return_value=response_503), patch("time.sleep"):
         with pytest.raises(RuntimeError, match="did not respond"):
             frankfurter.fetch()
 
+
 # --- Date range --------------------------------------------------------------
+
 
 def _day(date, cop=3317.65, eur=0.88286, jpy=157.78):
     return [
