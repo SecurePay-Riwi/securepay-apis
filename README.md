@@ -77,9 +77,11 @@ To load the table locally, start LocalStack from the SecurePay repository
 RATES_OUTPUT=dynamodb RATES_FROM=2026-10-01 uv run python -m securepay_apis.exchange_rates
 ```
 
-In AWS the same code runs as a Lambda (`securepay_apis.exchange_rates.handler.handler`)
-that EventBridge Scheduler calls once a day; it always writes today's rates to
-DynamoDB.
+In AWS the same code runs as the Lambda `securepay-dev-exchange-rates`
+(`securepay_apis.exchange_rates.handler.handler`, this repository's image) that
+EventBridge Scheduler calls once a day at 11:00 Bogotá; it always writes the
+latest published day to the DynamoDB table `securepay-dev-exchange-rates`
+(`RATES_TABLE`). Terraform in SecurePay creates it; see "Deploy" below.
 
 ## Local services
 
@@ -90,7 +92,7 @@ LocalStack is only needed for `LISTA_SOURCE=s3` and `RATES_OUTPUT=dynamodb`.
 ## CI
 
 Every pull request to `main` runs `.github/workflows/ci.yml`, the same
-checks as SecurePay without the deploy: `lint` (ruff check and format),
+checks as SecurePay: `lint` (ruff check and format),
 `secret-scan` (gitleaks over the whole history) and `tests` (pytest,
 without PostgreSQL or LocalStack). Run them locally before pushing:
 
@@ -141,3 +143,25 @@ docker run --rm --env-file .env -p 8001:8001 securepay-apis
 ```
 
 For the full local ecosystem, use Docker Compose in the `SecurePay` repository; it configures the generated restricted-list file and LocalStack endpoint.
+
+The same image runs as a Lambda: `awslambdaric` is a dependency, and Lambda
+starts it with `python -m awslambdaric securepay_apis.exchange_rates.handler.handler`
+instead of uvicorn. Build it with `docker build --provenance=false` when it goes
+to ECR (Lambda rejects image indexes).
+
+## Deploy
+
+On every merge to `main`, `.github/workflows/deploy.yml` builds the image,
+pushes it to ECR (`securepay-dev-apis`) tagged with the short commit and
+updates the `securepay-dev-exchange-rates` Lambda. It authenticates with
+GitHub's OIDC token as the role `securepay-dev-deploy-apis`, which only trusts
+this repository's `main` and may only push this image and update that Lambda;
+there are no AWS keys in GitHub. When the dev environment is destroyed it ends
+green with a notice. It can also be run by hand (Actions > Deploy > Run
+workflow), for example right after `terraform apply`.
+
+Once per environment, set the repository variable `AWS_DEPLOY_ROLE_ARN`
+(Settings > Secrets and variables > Actions > Variables) to the output of
+`aws iam get-role --role-name securepay-dev-deploy-apis --query Role.Arn --output text`.
+The whole flow (first apply, push, apply with `apis_image_tag`, first run) is
+in SecurePay's guide: https://securepay-riwi.github.io/SecurePay/docs/getting-started/deploy-aws-terraform#9-load-the-daily-exchange-rates

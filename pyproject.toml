@@ -5,6 +5,7 @@ description = "Simulated external APIs for SecurePay: restricted list provider a
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "awslambdaric>=4.2.3",
     "boto3>=1.43.113",
     "fastapi>=0.143.0",
     "httpx>=0.28.1",
