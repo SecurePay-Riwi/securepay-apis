@@ -112,9 +112,7 @@ def _request_with_retries(params: dict, headers: dict) -> httpx.Response:
 
     for attempt in range(_RETRIES):
         try:
-            response = httpx.get(
-                _URL, params=params, headers=headers, timeout=_TIMEOUT
-            )
+            response = httpx.get(_URL, params=params, headers=headers, timeout=_TIMEOUT)
 
             # httpx.raise_for_status does not distinguish 4xx from 5xx,
             # so we raise the 5xx ourselves to catch it and retry.
@@ -137,7 +135,7 @@ def _request_with_retries(params: dict, headers: dict) -> httpx.Response:
 
             last_error = error
             if attempt < _RETRIES - 1:
-                time.sleep(2 ** attempt)  # 1s, then 2s, then 4s
+                time.sleep(2**attempt)  # 1s, then 2s, then 4s
 
     raise RuntimeError(
         f"Frankfurter did not respond after {_RETRIES} attempts: {last_error}"

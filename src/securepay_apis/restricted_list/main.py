@@ -45,9 +45,7 @@ def create_app(config: Config | None = None) -> FastAPI:
         return {"total": len(registros), "registros": registros}
 
     @app.get("/lista/{documento}", **docs.CHECK_DOCUMENT)
-    async def consultar(
-        request: Request, documento: str = Path(**docs.DOCUMENT_PARAM)
-    ):
+    async def consultar(request: Request, documento: str = Path(**docs.DOCUMENT_PARAM)):
         await request.app.state.proveedor.simular()
         doc = normalizar(documento)
         if not doc:

@@ -32,14 +32,25 @@ def archivo(tmp_path) -> Path:
 
 def cliente(archivo, **cambios) -> TestClient:
     """Cliente sin latencia ni caídas, salvo que la prueba las pida."""
-    valores = {"archivo": archivo, "latencia_min_ms": 0, "latencia_max_ms": 0, "falla_pct": 0}
+    valores = {
+        "archivo": archivo,
+        "latencia_min_ms": 0,
+        "latencia_max_ms": 0,
+        "falla_pct": 0,
+    }
     valores.update(cambios)
     return TestClient(create_app(Config(**valores)))
 
 
 @pytest.mark.parametrize(
     "escrito",
-    ["1000000016", "1.000.000.016", "CC 1000000016", "CC1.000.000.016", " 1000 000 016 "],
+    [
+        "1000000016",
+        "1.000.000.016",
+        "CC 1000000016",
+        "CC1.000.000.016",
+        " 1000 000 016 ",
+    ],
 )
 def test_normaliza_los_formatos_del_seed(escrito):
     assert normalizar(escrito) == "1000000016"
@@ -121,7 +132,11 @@ def test_linea_invalida_falla_claro():
 
 @pytest.mark.parametrize(
     "cambios",
-    [{"fuente": "ftp"}, {"latencia_min_ms": 10, "latencia_max_ms": 5}, {"falla_pct": 101}],
+    [
+        {"fuente": "ftp"},
+        {"latencia_min_ms": 10, "latencia_max_ms": 5},
+        {"falla_pct": 101},
+    ],
 )
 def test_config_invalida(cambios):
     with pytest.raises(ValueError):
