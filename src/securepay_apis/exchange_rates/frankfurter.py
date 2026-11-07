@@ -9,6 +9,7 @@ Called once a day. In AWS, from a Lambda triggered by EventBridge Scheduler.
 import json
 import logging
 import time
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -29,13 +30,20 @@ _BASE = "USD"
 # daily task that runs in a Lambda with a 30s budget.
 _TIMEOUT = 10.0
 
+# fetch() asks for this many days back and keeps the newest complete one.
+# The latest rates mix providers: on a weekend EUR and JPY (ECB) carry
+# Friday's date and COP (BANREP) the Monday its TRM applies until, so the
+# latest answer alone never has one date for the three (2026-11-07:
+# 2026-11-06 and 2026-11-08). A week covers long holiday weekends.
+_LOOKBACK_DAYS = 7
+
 # Retries only apply to 5xx and network errors. A 4xx means we sent
 # something wrong and there is no point in repeating it.
 _RETRIES = 3
 
 
 def fetch() -> dict[str, Any]:
-    """Call Frankfurter and return a validated dictionary.
+    """Call Frankfurter and return the newest day with every currency.
 
     Returns:
         {
@@ -44,13 +52,15 @@ def fetch() -> dict[str, Any]:
             "source": "<full url>",
         }
 
-    Raises if the response is incomplete, inconsistent or has invalid
-    rates. The task never writes partial data: either everything is
-    valid, or nothing is stored.
+    It reads the last _LOOKBACK_DAYS and keeps the newest day where COP,
+    EUR and JPY all have a rate (on weekends and holidays, usually
+    Friday). Raises if no day is complete or a rate is invalid. The task
+    never writes partial data: either everything is valid, or nothing is
+    stored.
     """
-    params = {"base": _BASE, "quotes": ",".join(_CURRENCIES)}
-    records = _get(params)
-    return _validate(records, _url(params))
+    today = datetime.now(UTC).date()
+    start = (today - timedelta(days=_LOOKBACK_DAYS)).isoformat()
+    return fetch_range(start)[-1]
 
 
 def fetch_range(start: str, end: str | None = None) -> list[dict[str, Any]]:
