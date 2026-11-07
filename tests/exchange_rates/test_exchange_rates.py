@@ -4,6 +4,7 @@ No internet: every test mocks the HTTP call. The validation logic is the
 part that matters, and it is exercised with fixed responses.
 """
 
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from unittest.mock import patch
 
@@ -59,21 +60,43 @@ def test_missing_currency_raises():
     incomplete = [r for r in _OK_RESPONSE if r["quote"] != "COP"]
 
     with patch("httpx.get", return_value=_response(incomplete)):
-        with pytest.raises(ValueError, match="expected"):
+        with pytest.raises(ValueError, match="no complete day"):
             frankfurter.fetch()
 
 
-def test_different_dates_raise():
-    """A mix of dates means the response is inconsistent."""
-    mixed = [
-        {"date": "2026-10-14", "base": "USD", "quote": "COP", "rate": 3317.65},
-        {"date": "2026-10-13", "base": "USD", "quote": "EUR", "rate": 0.88286},
-        {"date": "2026-10-14", "base": "USD", "quote": "JPY", "rate": 157.78},
+def test_a_weekend_keeps_the_newest_complete_day():
+    """Saturday 2026-11-07: EUR and JPY (ECB) carry Friday's date and COP
+    (BANREP) the Monday its TRM applies until. fetch() keeps Friday."""
+    weekend = [
+        {"date": "2026-11-05", "base": "USD", "quote": "COP", "rate": 3801.2},
+        {"date": "2026-11-05", "base": "USD", "quote": "EUR", "rate": 0.8701},
+        {"date": "2026-11-05", "base": "USD", "quote": "JPY", "rate": 153.1},
+        {"date": "2026-11-06", "base": "USD", "quote": "COP", "rate": 3795.4},
+        {"date": "2026-11-06", "base": "USD", "quote": "EUR", "rate": 0.8712},
+        {"date": "2026-11-06", "base": "USD", "quote": "JPY", "rate": 153.4},
+        {"date": "2026-11-08", "base": "USD", "quote": "COP", "rate": 3790.0},
     ]
 
-    with patch("httpx.get", return_value=_response(mixed)):
-        with pytest.raises(ValueError, match="do not match"):
-            frankfurter.fetch()
+    with patch("httpx.get", return_value=_response(weekend)):
+        result = frankfurter.fetch()
+
+    assert result["date"] == "2026-11-06"
+    assert result["rates"]["COP"] == Decimal("3795.4")
+    assert result["rates"]["EUR"] == Decimal("0.8712")
+
+
+def test_fetch_asks_for_the_last_week():
+    with patch("httpx.get", return_value=_response(_OK_RESPONSE)) as get:
+        frankfurter.fetch()
+
+    params = get.call_args.kwargs["params"]
+    assert "to" not in params
+    assert (
+        params["from"]
+        == (
+            datetime.now(UTC).date() - timedelta(days=frankfurter._LOOKBACK_DAYS)
+        ).isoformat()
+    )
 
 
 def test_zero_rate_raises():

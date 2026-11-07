@@ -61,7 +61,7 @@ stores nothing.
 |----------|--------|--------------|
 | `RATES_OUTPUT` | `file` (default), `dynamodb` | `file` writes `src/securepay_apis/exchange_rates/data/rates_YYYY-MM-DD.json` (Git-ignored); `dynamodb` writes the table |
 | `RATES_TABLE` | `pagoseguro-exchange-rates` | DynamoDB table name |
-| `RATES_FROM` | unset, or a date like `2026-10-01` | Unset: only today. With a date: every published day from that date up to today |
+| `RATES_FROM` | unset, or a date like `2026-10-01` | Unset: the newest day with the three currencies. With a date: every published day from that date up to today |
 
 The table has one item per day: `base` (partition key, always `USD`),
 `rate_date` (sort key, `YYYY-MM-DD`), `rates`, `source` and `expires_at`
@@ -79,8 +79,10 @@ RATES_OUTPUT=dynamodb RATES_FROM=2026-10-01 uv run python -m securepay_apis.exch
 
 In AWS the same code runs as the Lambda `securepay-dev-exchange-rates`
 (`securepay_apis.exchange_rates.handler.handler`, this repository's image) that
-EventBridge Scheduler calls once a day at 11:00 Bogotá; it always writes the
-latest published day to the DynamoDB table `securepay-dev-exchange-rates`
+EventBridge Scheduler calls once a day at 11:00 Bogotá; it writes the newest
+day of the last week where COP, EUR and JPY all have a rate (on weekends,
+Friday: the ECB dates EUR and JPY on Friday and BANREP dates COP on the
+Monday its TRM applies until) to the DynamoDB table `securepay-dev-exchange-rates`
 (`RATES_TABLE`). Terraform in SecurePay creates it; see "Deploy" below.
 
 ## Local services
